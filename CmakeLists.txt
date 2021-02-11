@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.0.0)
+project(APK VERSION 0.1.0)
+
+set(CMAKE_PROJECT_INCLUDE_BEFORE ON)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build_Win")
+
+
+add_executable(lab1
+    "${CMAKE_SOURCE_DIR}/src/lab1/main.cpp"
+)
+
+add_executable(lab2
+    "${CMAKE_SOURCE_DIR}/src/lab2/main.cpp"
+)
