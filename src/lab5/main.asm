@@ -161,15 +161,15 @@
             mov     DS,     AX;
             mov     ES,     AX;
 
-;           TODO: add complete menu for all functionality
+;           TODO: add complete menu for all functionality, make 4ah interrupt residential;
             output_str      msgSTART;
             endl;
 
             call    RTC_TIME_DATE_OUT;
-            call    RTC_TIME_INPUT;
-            call    RTC_TIME_DATE_OUT;
+            call    RTC_SET_ALARM;
 
-
+            CYCLE:
+            jmp     CYCLE;
 
             exit    msgEND;
 
@@ -316,59 +316,6 @@
             ret;
 
         RTC_TIME_INPUT         endp;
-
-
-        Unsigned16Output            proc;           AX - output num
-
-            push    AX;
-            push    CX;
-            push    DX;
-            push    DI;
-            push    SI;
-
-            cld;
-            xor     BX,     BX;
-            xor     DI,     DI;
-            xor     DX,     DX;
-            mov     SI,     10;
-            mov     CX,     1; 
-            CYCLE_16USO_1:
-
-                xor     DX,     DX;
-                div     SI;
-                add     DL,     '0';
-                push    DX;
-                inc     DI;
-            
-            mov     CX,     AX;
-            inc     CX;
-            loop    CYCLE_16USO_1; 
-
-            mov     CX,     DI;
-            inc     CX;
-            mov     byte ptr UNumSize16,    CL;
-
-            dec     CX;
-            lea     DI,     UNumMod16;
-            CYCLE_16USO_2:
-
-                pop     AX;
-                stosb;
-
-            loop    CYCLE_16USO_2;
-
-
-            output_str UNumBuf16;
-            clearBuf   UNumBuf16; 
-            pop     SI;
-            pop     DI;
-            pop     DX;
-            pop     CX;
-            pop     AX;
-
-            ret;
-
-        Unsigned16Output            endp;
 
         UBCD16Output                proc;
 
@@ -521,30 +468,21 @@
             push    DX;
             pushf;
 
-
-            mov     AL,     0Bh;
-            out     70h,    AL;
-            jmp     $ + 2;
-            in      AL,     71h;
-            push    AX;
-            mov     AL,     0Bh;
-            out     70h,    AL;
-            pop     AX;
-            or      AL,     00000110b;
-            out     71h,    AL;
-
             endl;
             output_str      msgEnterALarm;
             endl;
             mov     DL,     3Ah;
 
-            call    Unsigned16Input;
+            call    UBCD16Input;
+            endl;
             push    AX;
             
-            call    Unsigned16Input;
+            call    UBCD16Input;
+            endl;
             push    AX;
             
-            call    Unsigned16Input;
+            call    UBCD16Input;
+            endl;
             push    AX;
 
 
@@ -588,6 +526,17 @@
             pop     AX;
             or      AL,     00100000b;
             out     71h,    AL;
+
+            xor     AL,     AL;
+            in      AL,     021h;
+            and     AL,     11111011b;
+            jmp     $ + 2;
+            out     021h,   AL;
+            xor     AL,     AL;                                                                                       |
+            in      AL,     0A1h;                   read mask by OCW1 command                                         |
+            and     AL,     11111110b;              enable IRQ8(70h) interruptions in interruption controller         |
+            jmp     $ + 2;
+            out     0A1h,    AL;                    write new mask by OCW1 command                                    |
 
             sti;
 
