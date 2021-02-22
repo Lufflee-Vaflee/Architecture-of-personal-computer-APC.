@@ -161,11 +161,14 @@
             mov     DS,     AX;
             mov     ES,     AX;
 
+;           TODO: add complete menu for all functionality
             output_str      msgSTART;
             endl;
 
-            mov     CX,     20000;  
-            call    Sleep;
+            call    RTC_TIME_DATE_OUT;
+            call    RTC_TIME_INPUT;
+            call    RTC_TIME_DATE_OUT;
+
 
 
             exit    msgEND;
@@ -181,20 +184,13 @@
 
             xor     AH,     AH;
 
-            mov     AL,     0Bh;
-            out     70h,    AL;
-            jmp     $ + 2;
-            in      AL,     71h;
-            or      AL,     00000110b;
-            out     71h,    AL;
-
             mov     AL,     00h;       seconds
             out     70h,    AL;
             jmp     $ + 2;
             in      AL,     71h;
             push    AX;
 
-            mov     AL,     02h;       minutes
+            mov     AX,     02h;       minutes
             out     70h,    AL;
             jmp     $ + 2;
             in      AL,     71h;
@@ -230,34 +226,34 @@
             mov     DL,     3Ah;
 
             pop     AX;
-            call    Unsigned16Output ;
+            call    UBCD16Output;
             mov     AH,     02h;
             int     21h;
 
             pop     AX;    
-            call    Unsigned16Output ;
+            call    UBCD16Output;
             mov     AH,     02h;
             int     21h;
 
             pop     AX;
-            call    Unsigned16Output ;
+            call    UBCD16Output;
 
             endl;
             output_str      msgCurrentTime;
             endl;
 
             pop     AX;
-            call    Unsigned16Output ;
+            call    UBCD16Output;
             mov     AH,     02h;
             int     21h;
 
             pop     AX;
-            call    Unsigned16Output ;
+            call    UBCD16Output;
             mov     AH,     02h;
             int     21h;
 
             pop     AX;
-            call    Unsigned16Output;
+            call    UBCD16Output;
 
             popf;
             pop     DX;
@@ -273,27 +269,22 @@
             push    DX;
             pushf;
 
-
-            mov     AL,     0Bh;
-            out     70h,    AL;
-            jmp     $ + 2;
-            in      AL,     71h;
-            or      AL,     00000110b;
-            out     71h,    AL;
-
             endl;
             output_str      msgEnterTime;
             endl;
             mov     DL,     3Ah;
 
-            call    Unsigned16Input;
+            call    UBCD16Input;
             push    AX;
+            endl;
 
-            call    Unsigned16Input;
+            call    UBCD16Input;
             push    AX;
+            endl;
 
-            call    Unsigned16Input;
+            call    UBCD16Input;
             push    AX;
+            endl;
 
 
             cli;
@@ -302,19 +293,19 @@
             out     70h,    AL;
             jmp     $ + 2;
             pop     AX;
-            in      71h,    AL;
+            out     71h,    AL;
 
             mov     AL,     02h;       minutes
             out     70h,    AL;
             jmp     $ + 2;
             pop     AX;
-            in      71h,    AL;
+            out     71h,    AL;
 
             mov     AL,     04h;       hours
             out     70h,    AL;
             jmp     $ + 2;
             pop     AX;
-            in      71h,    AL;
+            out     71h,    AL;
 
             sti;
 
@@ -379,8 +370,36 @@
 
         Unsigned16Output            endp;
 
-        Unsigned16Input             proc;
+        UBCD16Output                proc;
 
+            push    DX;
+            push    AX;
+            push    CX;
+
+            xor     AH,     AH;
+            xor     DX,     DX;
+            mov     CX,     16;
+            div     CX;
+            push    DX;
+            mov     DL,     AL;
+            add     DL,     '0';
+            mov     AH,     02h;
+            int     21h;
+            pop     DX;
+            add     DL,     '0';
+            int     21h;
+
+            pop     CX; 
+            pop     AX;
+            pop     DX;
+            ret;
+
+
+        UBCD16Output                endp;
+
+
+        UBCD16Input             proc;hardcoded from unsigned16 to ubcd16, no checks for errors
+;                                       TODO: refact and better debug of this
             push    BX;
             push    CX;
             push    DI;
@@ -394,40 +413,36 @@
 
             enter_str       UNumBuf16;
             mov     CL,     UNumSize16;
-            dec     CL;
 
             CYCLE_16UI_1:
 
                 mov     BL,     UNumMod16 + DI;
                 sub     BL,     '0';
                 add     AL,     BL;
-                rcl     AX,     1;
-                jb      undefined_16SI;
-                rcr     AX,     1;
-                inc     DI;
                 dec     CX;
-                jcxz    exit_CYCLE_16SI_1;
-                mul     SI;
-                jo      undefined_16SI;
+                jcxz    exit_CYCLE_16UI_1;
                 inc     CX;
+                rcl     AX,     4;
+                inc     DI;
 
             loop    CYCLE_16UI_1;
             exit_CYCLE_16UI_1:
 
-            jmp     end_16SI;
+            jmp     end_16UI;
                
-            undefined_16SI:
+            undefined_16UI:
             xor     AX,     AX;
-            jmp     end_16SI; 
+            jmp     end_16UI; 
 
-            end_16SI:
+            end_16UI:
+            clearBuf   UNumBuf16; 
             pop     SI;
             pop     DI;
             pop     CX;
             pop     BX;
             ret;
 
-        Unsigned16Input             endp;
+        UBCD16Input             endp;
 
 
         Sleep                       proc;               CX - miliseconds num
@@ -511,6 +526,10 @@
             out     70h,    AL;
             jmp     $ + 2;
             in      AL,     71h;
+            push    AX;
+            mov     AL,     0Bh;
+            out     70h,    AL;
+            pop     AX;
             or      AL,     00000110b;
             out     71h,    AL;
 
@@ -535,19 +554,19 @@
             out     70h,    AL;
             jmp     $ + 2;
             pop     AX;
-            in      71h,    AL;
+            out     71h,    AL;
                 
             mov     AL,     03h;       minutes
             out     70h,    AL;
             jmp     $ + 2;
             pop     AX;
-            in      71h,    AL;
+            out     71h,    AL;
             
             mov     AL,     05h;       hours
             out     70h,    AL;
             jmp     $ + 2;
             pop     AX;
-            in      71h,    AL;
+            out     71h,    AL;
 
 
             mov     AH,     25h;
@@ -563,6 +582,10 @@
             out     70h,    AL;
             jmp     $ + 2;
             in      AL,     71h;
+            push    AX;
+            mov     AL,     0Bh;
+            out     70h,    AL;
+            pop     AX;
             or      AL,     00100000b;
             out     71h,    AL;
 
