@@ -20,6 +20,7 @@
         TimeOut         dw  20000;
         TimeOut_flag    db  0;
         Esc_flag        db  0;
+        Eror_num        db  0;
 
     ;//////////////////////////////////////////////////////////      Messages      ///////////////////////////////////////////////////////////////////////////
         msgSTART        db  "  ================================ Program Start =================================$";
@@ -166,7 +167,7 @@
 
      ;////////////////////////////////////////////////////////////     Proc     //////////////////////////////////////////////////////////// 
 
-         Unsigned16Output        proc;           AX - output num
+         Unsigned16Output        proc FAR;           AX - output num
             
             push    AX;
             push    CX;
@@ -274,14 +275,14 @@
             output_str  msgScanCodes;
             endl;
 
+
+            mov     AH,     35h;
+            mov     AL,     09h;
+            int     21h;
+            push    ES;
+            push    BX;
+
             cli;
-
-            mov     DI,     0h;
-            mov     ES,     DI;
-            mov     DI,     24h;
-
-            push    [DI];                           save standart vector
-
             mov     AH,     25h;
             mov     AL,     09h;
             mov     DX,     @code;
@@ -300,7 +301,16 @@
             jne     Scodes_CYCLE;
 
             cli;
-            pop     [DI];
+            pop     BX;
+            pop     ES;
+            mov     AH,     25h;
+            mov     AL,     09h;
+            mov     DX,     ES;
+            push    DS;
+            mov     DS,     DX;
+            mov     DX,     BX;
+            int     21h;
+            pop     DS;
             sti;
 
             pop     DX;
@@ -317,18 +327,41 @@
         IRQ1_09h                proc;
 
             push    AX;
+            push    DS;
+            push    ES;
+
+            mov     AX,     @data;
+            mov     DS,     AX;
+            mov     Es,     AX;
+
 
             in      AL,     60h;
-            mov     CX,     01;
+            push    AX;
 
+            ;cmp     AL,     0FEh
+            ;jne     IRQ1_continue_1;
+            ;mov     CL,     Eror_num;
+            ;cmp     CL,     3;
+            ;je      IRQ1_exit;
+            ;inc     CL;    
+            ;mov     Eror_num,   CL;
+
+            pop     AX;
+            IRQ1_continue_1:
             cmp     AL,     1;
-            jne     IRQ1_continue;
+            jne     IRQ1_continue_2;
             mov     Esc_flag,   AL;
 
-            IRQ1_continue:
+            IRQ1_continue_2:
             call    Unsigned16Output;
             endl;
 
+            mov     AL,     20h;        ;iret should do it by him self, but without this it doesnt work
+            out     20h,    AL;
+
+            IRQ1_exit:
+            pop     ES;
+            pop     DS;
             pop     AX;
             iret;
 
