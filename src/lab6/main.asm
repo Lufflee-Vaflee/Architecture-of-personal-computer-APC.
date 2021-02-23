@@ -149,7 +149,7 @@
 
     ;////////////////////////////////////////////////////////////     Main     ////////////////////////////////////////////////////////////   
     .code
-
+;                   TODO: add main menu switching beatween 2 variants
         main:
 
             mov     AX,     @data;
@@ -167,7 +167,7 @@
 
      ;////////////////////////////////////////////////////////////     Proc     //////////////////////////////////////////////////////////// 
 
-         Unsigned16Output        proc FAR;           AX - output num
+        Unsigned16Output        proc FAR;          TODO: Hex output will be much greater
             
             push    AX;
             push    CX;
@@ -265,8 +265,8 @@
         kbd_out_ready           endp;
 
 
-        Scan_codes_output       proc;
-
+        Scan_codes_output       proc;           TODO: Add enabling of interrupts in interrupt controller(maybe with reinit) and keyboard controller, not relay on default properties 
+                                    ;           TODO: add checks fro different keybord errors, accesible interface, type of keyboard and etc.
             push    AX;
             push    DI;
             push    ES;
