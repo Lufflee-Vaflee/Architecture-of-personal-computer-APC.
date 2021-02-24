@@ -4,13 +4,6 @@
 
     .data
 
-
-    ;////////////////////////////////////////////// 16 Signed num (string decimal form) buffer ///////////////////////////////////////////////////////////////
-        NumBuf16        db  8;
-        NumSize16       db  ?;
-        NumSign16       db  ?;
-        NumMod16        db  9   DUP ('$');
-
     ;///////////////////////////////////////////// 16 Unsigned num (string decimal form) buffer ///////////////////////////////////////////////////////////////
         UNumBuf16       db  8;
         UNumSize16      db  ?;
@@ -59,36 +52,6 @@
 
         endm
 
-        output_msg  macro   outputAdress, size;
-
-            push    AX;
-            push    BX;
-            push    SI;
-            push    DI;
-
-            mov     SI,     size;
-            lea     DI,     outputAdress + SI + 2;
-            mov     SI,     DI;
-            lodsb;
-            mov     BL,     AL;
-            mov     AL,     '$';
-            stosb;
-            dec     DI;
-
-            mov     AH,     09h;
-            lea     DX,     [outputAdress + 2];
-            int     21h;
-
-            mov     AL,     BL;
-            stosb;
-
-            pop     DI;
-            pop     SI;
-            pop     BX;
-            pop     AX;
-
-        endm
-
         endl        macro
              
             push    AX;
@@ -111,18 +74,6 @@
 
         endm
 
-        pause       macro   pauseMsg
-
-            push    AX;
-
-            output_str      pauseMsg;
-            mov     AH,     01h;
-            int     21h;
-
-            pop     AX;
-
-        endm
-        
         clearBuf    macro   strBuf
 
             push    CX;
@@ -159,7 +110,10 @@
             output_str      msgSTART;
             endl;
 
-            call    Scan_codes_output;
+            call    Kbd_lights_algorithm;
+
+            CYCLE:
+            jmp CYCLE;
 
 
             exit    msgEND;
@@ -205,8 +159,8 @@
                 stosb;
             
             loop    CYCLE_16USO_2;
-            
-            
+
+
             output_str UNumBuf16;
             clearBuf   UNumBuf16; 
             pop     SI;
@@ -265,8 +219,31 @@
         kbd_out_ready           endp;
 
 
+
+        Kbd_lights_algorithm    proc;           TODO: i have no idea how to test it, even hardware virtualization blocks acces to real lights
+
+            push    AX;
+            
+            cli;
+
+            call    kbd_in_ready;
+            mov     AL,     0EDh;
+            out     60h,    AL;
+            call    kbd_in_ready;
+            mov     AL,     010b;
+            out     60h,    AL;
+
+
+            sti;
+
+            pop     AX;
+            ret;
+
+        Kbd_lights_algorithm    endp;s
+
+
         Scan_codes_output       proc;           TODO: Add enabling of interrupts in interrupt controller(maybe with reinit) and keyboard controller, not relay on default properties 
-                                    ;           TODO: add checks fro different keybord errors, accesible interface, type of keyboard and etc.
+                                    ;           TODO: add checks for different keybord errors, accesible interface, type of keyboard and etc.
             push    AX;
             push    DI;
             push    ES;

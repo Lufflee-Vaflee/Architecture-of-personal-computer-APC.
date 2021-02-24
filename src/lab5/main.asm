@@ -4,13 +4,6 @@
 
     .data
 
-
-    ;////////////////////////////////////////////// 16 Signed num (string decimal form) buffer ///////////////////////////////////////////////////////////////
-        NumBuf16        db  8;
-        NumSize16       db  ?;
-        NumSign16       db  ?;
-        NumMod16        db  9   DUP ('$');
-
     ;///////////////////////////////////////////// 16 Unsigned num (string decimal form) buffer ///////////////////////////////////////////////////////////////
         UNumBuf16        db  8;
         UNumSize16       db  ?;
@@ -64,35 +57,6 @@
 
         endm
 
-        output_msg  macro   outputAdress, size;
-
-            push    AX;
-            push    BX;
-            push    SI;
-            push    DI;
-
-            mov     SI,     size;
-            lea     DI,     outputAdress + SI + 2;
-            mov     SI,     DI;
-            lodsb;
-            mov     BL,     AL;
-            mov     AL,     '$';
-            stosb;
-            dec     DI;
-
-            mov     AH,     09h;
-            lea     DX,     [outputAdress + 2];
-            int     21h;
-
-            mov     AL,     BL;
-            stosb;
-
-            pop     DI;
-            pop     SI;
-            pop     BX;
-            pop     AX;
-
-        endm
 
         endl        macro
              
@@ -116,18 +80,6 @@
 
         endm
 
-        pause       macro   pauseMsg
-
-            push    AX;
-
-            output_str      pauseMsg;
-            mov     AH,     01h;
-            int     21h;
-
-            pop     AX;
-
-        endm
-        
         clearBuf    macro   strBuf
 
             push    CX;
@@ -161,7 +113,7 @@
             mov     DS,     AX;
             mov     ES,     AX;
 
-;           TODO: add complete menu for all functionality, make 4ah interrupt residential;
+;           TODO: add complete menu for all functionality, make 4ah interrupt residential, remove infinite cycle
             output_str      msgSTART;
             endl;
 
@@ -322,6 +274,7 @@
             push    DX;
             push    AX;
             push    CX;
+            pushf;
 
             xor     AH,     AH;
             xor     DX,     DX;
@@ -336,6 +289,7 @@
             add     DL,     '0';
             int     21h;
 
+            popf;
             pop     CX; 
             pop     AX;
             pop     DX;
@@ -351,6 +305,7 @@
             push    CX;
             push    DI;
             push    SI;
+            pushf;
 
             xor     AX,     AX;
             xor     BX,     BX;
@@ -383,6 +338,7 @@
 
             end_16UI:
             clearBuf   UNumBuf16; 
+            popf;
             pop     SI;
             pop     DI;
             pop     CX;
