@@ -117,11 +117,8 @@
             output_str      msgSTART;
             endl;
 
-            call    RTC_TIME_DATE_OUT;
-            call    RTC_SET_ALARM;
-
-            CYCLE:
-            jmp     CYCLE;
+            mov CX,      1000;
+            call Sleep;
 
             exit    msgEND;
 
@@ -365,25 +362,25 @@
 
             mov     AH,     25h;
             mov     AL,     70h;
-            mov     DX,     @code;
+            mov     DX,     CS;
             push    DS;
             mov     DS,     DX;
-            mov     DX,     offset word ptr IRQ8_70h;
+            mov     DX,     OFFSET IRQ8_70h;
             int     21h;
 
             pop     DS;
 
             cli;
-            xor     AL,     AL;
-            in      AL,     021h;
-            and     AL,     11111011b;
-            jmp     $ + 2;
-            out     021h,   AL;
-            xor     AL,     AL;                                                                                       |
-            in      AL,     0A1h;                   read mask by OCW1 command                                         |
-            and     AL,     11111110b;              enable IRQ8(70h) interruptions in interruption controller         |
-            jmp     $ + 2;
-            out     0A1h,    AL;                    write new mask by OCW1 command                                    |
+            ;xor     AL,     AL;
+            ;in      AL,     021h;
+            ;and     AL,     11111011b;
+            ;jmp     $ + 2;
+            ;out     021h,   AL;
+            ;xor     AL,     AL;                                                                                       |
+            ;in      AL,     0A1h;                   read mask by OCW1 command                                         |
+            ;and     AL,     11111110b;              enable IRQ8(70h) interruptions in interruption controller         |
+            ;jmp     $ + 2;
+            ;out     0A1h,    AL;                    write new mask by OCW1 command                                    |
 
             mov     AL,     8Bh;                    set B register for CMOS                                           |
             out     70h,    AL;                     write B register to controll port                                 |
@@ -403,7 +400,10 @@
             sti;
             CYCLE_SLEEP:
                 cmp     CX,     0;
-            jg CYCLE_SlEEP;                        wait for enouth IRQ8 interruptions midly called per 1 sec
+                mov     AL,     0ch;
+                out     70h,    AL;
+                in      AL,     71h;
+            jg CYCLE_SlEEP;                        wait for enouth IRQ8 interruptions midly called per 1 msec
                 
             cli;
             pop     [DI];
@@ -417,6 +417,24 @@
             ret;
 
         Sleep                       endp;
+
+        IRQ8_70h                    proc;
+
+            push    AX;
+
+
+            dec     CX;
+
+
+            xor     AX, AX;
+            mov     al, 20h          ; посылаем сигнал конца
+            out     0a0h ,al  ; прерывания
+            out     20h, al;
+
+            pop     AX;
+            IRET;
+
+        IRQ8_70h                    endp;
 
         RTC_SET_ALARM               proc;
 
@@ -524,23 +542,6 @@
 
 
     ;////////////////////////////////////////////////////////////   interruptions     ////////////////////////////////////////////////////////////
-
-        IRQ8_70h                    proc;
-
-            push    AX;
-            pushf;
-
-            dec     CX;
-
-            mov     AL,     0ch;
-            out     70h,    AL;
-            in      AL,     71h;
-
-            popf;
-            pop     AX;
-            IRET;
-
-        IRQ8_70h                    endp;
 
         RTC_4ah                     proc;
 
